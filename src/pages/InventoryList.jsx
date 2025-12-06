@@ -103,11 +103,20 @@ function InventoryList() {
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
 
+  // 🔹 Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
   // Load from localStorage when page opens
   useEffect(() => {
     const loaded = loadItems();
     setItems(loaded);
   }, []);
+
+  // When filters/search/sort change, reset to page 1
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, activeStatus, activeCategory, sortOrder]);
 
   const filteredItems = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -139,6 +148,21 @@ function InventoryList() {
 
     return filtered;
   }, [items, searchTerm, activeStatus, activeCategory, sortOrder]);
+
+  // 🔹 Pagination calculations (10 per page)
+  const totalFiltered = filteredItems.length;
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const startIndex = (safePage - 1) * pageSize;
+  const paginatedItems = filteredItems.slice(startIndex, startIndex + pageSize);
+
+  const goToPage = (page) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+  };
+
+  const goPrev = () => goToPage(safePage - 1);
+  const goNext = () => goToPage(safePage + 1);
 
   return (
     <div className="min-h-screen bg-[#f6fafb] text-slate-900">
@@ -294,7 +318,7 @@ function InventoryList() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredItems.map((item, idx) => {
+                    {paginatedItems.map((item, idx) => {
                       const derivedStatus = getStatusFromStock(item.stock);
                       const isLow = derivedStatus === "Low Stock";
                       const isOut = derivedStatus === "Out of Stock";
@@ -307,7 +331,7 @@ function InventoryList() {
                           className={
                             rowBg +
                             " text-slate-700 " +
-                            (idx !== filteredItems.length - 1
+                            (idx !== paginatedItems.length - 1
                               ? "border-b border-slate-100"
                               : "")
                           }
@@ -349,7 +373,7 @@ function InventoryList() {
                             <div className="flex items-center justify-end gap-4">
                               <button
                                 onClick={() =>
-                                  navigate("/edit-medicine", {
+                                  navigate(`/inventory/edit/${item.id}`, {
                                     state: { medicine: item },
                                   })
                                 }
@@ -376,29 +400,108 @@ function InventoryList() {
                 </table>
               </div>
 
+              {/* Footer with pagination controls */}
               <div className="flex items-center justify-between rounded-b-[32px] border-t border-slate-100 px-8 py-4 text-[12px] text-slate-500">
                 <span>
-                  Showing {filteredItems.length} of {items.length} results
+                  Showing {paginatedItems.length} of {totalFiltered} results
                 </span>
+
                 <div className="flex items-center gap-1">
-                  <button className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 text-xs text-slate-500 hover:bg-s
-                  late-50">
+                  {/* Previous */}
+                  <button
+                    onClick={goPrev}
+                    disabled={safePage === 1}
+                    className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 text-xs text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent"
+                  >
                     {"<"}
                   </button>
-                  <button className="h-8 w-8 rounded-md border border-[#00b074] bg-[#00b074] text-xs font-semibold text-white">
-                    1
-                  </button>
-                  <button className="h-8 w-8 rounded-md border border-slate-200 text-xs text-slate-600 hover:bg-slate-50">
-                    2
-                  </button>
-                  <button className="h-8 w-8 rounded-md border border-slate-200 text-xs text-slate-600 hover:bg-slate-50">
-                    3
-                  </button>
-                  <span className="px-1 text-xs text-slate-400">...</span>
-                  <button className="h-8 w-8 rounded-md border border-slate-200 text-xs text-slate-600 hover:bg-slate-50">
-                    8
-                  </button>
-                  <button className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 text-xs text-slate-500 hover:bg-slate-50">
+
+                  {/* Page 1 */}
+                  {totalPages >= 1 && (
+                    <button
+                      onClick={() => goToPage(1)}
+                      className={
+                        "h-8 w-8 rounded-md border text-xs font-semibold " +
+                        (safePage === 1
+                          ? "border-[#00b074] bg-[#00b074] text-white"
+                          : "border-slate-200 text-slate-600 hover:bg-slate-50")
+                      }
+                    >
+                      1
+                    </button>
+                  )}
+
+                  {/* Page 2 */}
+                  {totalPages >= 2 && (
+                    <button
+                      onClick={() => goToPage(2)}
+                      className={
+                        "h-8 w-8 rounded-md border text-xs font-semibold " +
+                        (safePage === 2
+                          ? "border-[#00b074] bg-[#00b074] text-white"
+                          : "border-slate-200 text-slate-600 hover:bg-slate-50")
+                      }
+                    >
+                      2
+                    </button>
+                  )}
+
+                  {/* Page 3 */}
+                  {totalPages >= 3 && (
+                    <button
+                      onClick={() => goToPage(3)}
+                      className={
+                        "h-8 w-8 rounded-md border text-xs font-semibold " +
+                        (safePage === 3
+                          ? "border-[#00b074] bg-[#00b074] text-white"
+                          : "border-slate-200 text-slate-600 hover:bg-slate-50")
+                      }
+                    >
+                      3
+                    </button>
+                  )}
+
+                  {/* Ellipsis + last page if more than 4 pages */}
+                  {totalPages > 4 && (
+                    <>
+                      <span className="px-1 text-xs text-slate-400">
+                        ...
+                      </span>
+                      <button
+                        onClick={() => goToPage(totalPages)}
+                        className={
+                          "h-8 w-8 rounded-md border text-xs font-semibold " +
+                          (safePage === totalPages
+                            ? "border-[#00b074] bg-[#00b074] text-white"
+                            : "border-slate-200 text-slate-600 hover:bg-slate-50")
+                        }
+                      >
+                        {totalPages}
+                      </button>
+                    </>
+                  )}
+
+                  {/* If totalPages is 4, show page 4 as the last one */}
+                  {totalPages === 4 && (
+                    <button
+                      onClick={() => goToPage(4)}
+                      className={
+                        "h-8 w-8 rounded-md border text-xs font-semibold " +
+                        (safePage === 4
+                          ? "border-[#00b074] bg-[#00b074] text-white"
+                          : "border-slate-200 text-slate-600 hover:bg-slate-50")
+                      }
+                    >
+                      4
+                    </button>
+                  )}
+
+                  {/* Next */}
+                  <button
+                    onClick={goNext}
+                    disabled={safePage === totalPages}
+                    className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 text-xs text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent"
+                  >
                     {">"}
                   </button>
                 </div>

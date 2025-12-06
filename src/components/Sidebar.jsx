@@ -13,7 +13,9 @@ import settingIcon from "../assets/setting.png";
 /* Helper component for navigation items */
 const NavItem = ({ label, icon, to }) => {
   const location = useLocation();
-  const isActive = location.pathname === to || (to === '/' && location.pathname === '/dashboard');
+  const isActive =
+    location.pathname === to ||
+    (to === "/" && location.pathname === "/dashboard");
 
   return (
     <Link
@@ -81,4 +83,3 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
-

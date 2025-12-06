@@ -1,7 +1,7 @@
 ﻿// src/pages/DashboardOverview.jsx
 
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar.jsx";
 
 import bellicon from "../assets/bellicon.png";
@@ -96,7 +96,90 @@ const summaryCards = [
     color: "text-red-500",
     badge: false,
   },
+  {
+    title: "Out of Stock Alerts",
+    value: 1,
+    linkText: "Review Inventory",
+    linkUrl: "/inventory",
+    color: "text-red-700",
+    badge: false,
+  },
 ];
+
+const INVENTORY_STORAGE_KEY = "inventory_items";
+
+const defaultInventoryItems = [
+  {
+    id: 1,
+    name: "Paracetamol 500mg",
+    sku: "PC500-123",
+    stock: 500,
+    price: "ƒ,15.99",
+    expiry: "12/2025",
+    category: "Tablets",
+  },
+  {
+    id: 2,
+    name: "Amoxicillin 250mg",
+    sku: "AMX250-456",
+    stock: 45,
+    price: "ƒ,112.50",
+    expiry: "08/2024",
+    category: "Capsules",
+  },
+  {
+    id: 3,
+    name: "Ibuprofen 200mg",
+    sku: "IB200-789",
+    stock: 1200,
+    price: "ƒ,18.25",
+    expiry: "05/2026",
+    category: "Tablets",
+  },
+  {
+    id: 4,
+    name: "Loratadine 10mg",
+    sku: "LOR10-101",
+    stock: 0,
+    price: "ƒ,115.00",
+    expiry: "01/2025",
+    category: "Syrups",
+  },
+  {
+    id: 5,
+    name: "Aspirin 81mg",
+    sku: "ASP81-112",
+    stock: 80,
+    price: "ƒ,14.75",
+    expiry: "11/2024",
+    category: "Tablets",
+  },
+];
+
+function getStatusFromStock(stockRaw) {
+  const stock = Number(stockRaw || 0);
+  if (stock <= 0) return "Out of Stock";
+  if (stock <= 200) return "Low Stock";
+  return "In Stock";
+}
+
+function loadInventoryItems() {
+  try {
+    const stored = localStorage.getItem(INVENTORY_STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length) return parsed;
+    }
+  } catch (e) {
+    console.error("Failed to load inventory items:", e);
+  }
+
+  localStorage.setItem(
+    INVENTORY_STORAGE_KEY,
+    JSON.stringify(defaultInventoryItems)
+  );
+  return defaultInventoryItems;
+}
 
 const totalEarnings = {
   value: "₹84,500",
@@ -148,8 +231,9 @@ const Card = ({ title, value, linkText, linkUrl, color, badge }) => (
   </div>
 );
 
-const QuickActionButton = ({ icon, label, colorClass }) => (
+const QuickActionButton = ({ icon, label, colorClass, onClick }) => (
   <button
+    onClick={onClick}
     className={`w-full flex items-center justify-center gap-2 rounded-xl ${colorClass} px-5 py-3 text-[13px] font-semibold text-white shadow-md transition hover:opacity-90`}
   >
     <span className="text-lg">{icon}</span>
@@ -192,13 +276,41 @@ function loadOrders() {
 
 function DashboardOverview() {
   const [recentOrders, setRecentOrders] = useState(initialOrders);
+  const [inventoryItems, setInventoryItems] = useState(defaultInventoryItems);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const orders = loadOrders();
     setRecentOrders(orders);
+
+    const inventory = loadInventoryItems();
+    setInventoryItems(inventory);
   }, []);
 
   const recentSlice = recentOrders.slice(0, 4);
+
+  const newOrdersCount = recentOrders.filter(
+    (order) => order.status === "New Order"
+  ).length;
+
+  const processingOrdersCount = recentOrders.filter(
+    (order) => order.status === "Processing"
+  ).length;
+
+  const lowStockAlertsCount = inventoryItems.filter(
+    (item) => getStatusFromStock(item.stock) === "Low Stock"
+  ).length;
+
+  const outOfStockAlertsCount = inventoryItems.filter(
+    (item) => getStatusFromStock(item.stock) === "Out of Stock"
+  ).length;
+
+  const summaryValueOverrides = {
+    "New Orders": newOrdersCount,
+    "Processing Orders": processingOrdersCount,
+    "Low Stock Alerts": lowStockAlertsCount,
+    "Out of Stock Alerts": outOfStockAlertsCount,
+  };
 
   return (
     <div className="min-h-screen bg-[#f6fafb] text-slate-900">
@@ -224,10 +336,11 @@ function DashboardOverview() {
 
           <main className="flex-1 overflow-y-auto bg-[#f6fafb] px-10 py-7">
             {/* Summary + Earnings */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {summaryCards.map((card) => (
-                <Card key={card.title} {...card} />
-              ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+                {summaryCards.map((card) => {
+                  const cardValue = summaryValueOverrides[card.title] ?? card.value;
+                  return <Card key={card.title} {...card} value={cardValue} />;
+                })}
 
               <div className="bg-white p-6 rounded-xl shadow-[0_16px_40px_rgba(15,23,42,0.04)] border border-slate-100">
                 <h3 className="text-sm font-medium text-slate-500">
@@ -329,11 +442,13 @@ function DashboardOverview() {
                   <div className="space-y-3">
                     <QuickActionButton
                       label="Add New Medicine"
+                      onClick={() => navigate("/add-medicine")}
                       colorClass="bg-emerald-500 shadow-[0_12px_30px_rgba(16,185,129,0.2)]"
                       icon="💊"
                     />
                     <QuickActionButton
                       label="Update Stock Level"
+                      onClick={() => navigate("/inventory")}
                       colorClass="bg-emerald-600 shadow-[0_12px_30px_rgba(16,185,129,0.15)]"
                       icon="📦"
                     />

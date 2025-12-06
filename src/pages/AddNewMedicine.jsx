@@ -5,6 +5,73 @@ import bellicon from "../assets/bellicon.png";
 import pharmacyProfile from "../assets/pharmacyprofile.png";
 import { useNavigate } from "react-router-dom";
 
+const INVENTORY_STORAGE_KEY = "inventory_items";
+
+const defaultInventoryItems = [
+  {
+    id: 1,
+    name: "Paracetamol 500mg",
+    sku: "PC500-123",
+    stock: 500,
+    price: "₹15.99",
+    expiry: "12/2025",
+    category: "Tablets",
+  },
+  {
+    id: 2,
+    name: "Amoxicillin 250mg",
+    sku: "AMX250-456",
+    stock: 45,
+    price: "₹112.50",
+    expiry: "08/2024",
+    category: "Capsules",
+  },
+  {
+    id: 3,
+    name: "Ibuprofen 200mg",
+    sku: "IB200-789",
+    stock: 1200,
+    price: "₹18.25",
+    expiry: "05/2026",
+    category: "Tablets",
+  },
+  {
+    id: 4,
+    name: "Loratadine 10mg",
+    sku: "LOR10-101",
+    stock: 0,
+    price: "₹115.00",
+    expiry: "01/2025",
+    category: "Syrups",
+  },
+  {
+    id: 5,
+    name: "Aspirin 81mg",
+    sku: "ASP81-112",
+    stock: 80,
+    price: "₹14.75",
+    expiry: "11/2024",
+    category: "Tablets",
+  },
+];
+
+function ensureInventorySeed() {
+  try {
+    const stored = localStorage.getItem(INVENTORY_STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length) return parsed;
+    }
+  } catch (err) {
+    console.error("Failed to load inventory:", err);
+  }
+  localStorage.setItem(
+    INVENTORY_STORAGE_KEY,
+    JSON.stringify(defaultInventoryItems)
+  );
+  return defaultInventoryItems;
+}
+
 function formatRupee(value) {
   if (!value) return "";
   const trimmed = value.toString().trim();
@@ -136,10 +203,12 @@ function AddNewMedicine() {
     };
 
     try {
-      const existing =
-        JSON.parse(localStorage.getItem("custom_medicines")) || [];
-      existing.push(newItem);
-      localStorage.setItem("custom_medicines", JSON.stringify(existing));
+      const existingInventory = ensureInventorySeed();
+      const updatedInventory = [...existingInventory, newItem];
+      localStorage.setItem(
+        INVENTORY_STORAGE_KEY,
+        JSON.stringify(updatedInventory)
+      );
     } catch (err) {
       console.error("Failed to save medicine:", err);
     }

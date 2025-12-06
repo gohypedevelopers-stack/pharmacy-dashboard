@@ -90,10 +90,19 @@ function NewPrescriptionOrders() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
 
+  // 🔹 Pagination state (15 per page)
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 15;
+
   useEffect(() => {
     const loaded = loadOrders();
     setOrders(loaded);
   }, []);
+
+  // Reset to page 1 when filter or search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeFilter, searchTerm]);
 
   const normalizedSearch = searchTerm.trim().toLowerCase();
 
@@ -108,6 +117,25 @@ function NewPrescriptionOrders() {
 
     return matchesFilter && matchesSearch;
   });
+
+  // 🔹 Pagination calculations
+  const totalFiltered = filteredOrders.length;
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const startIndex = (safePage - 1) * pageSize;
+  const paginatedOrders = filteredOrders.slice(
+    startIndex,
+    startIndex + pageSize
+  );
+
+  const goToPageDelta = (delta) => {
+    setCurrentPage((prev) => {
+      const next = prev + delta;
+      if (next < 1) return 1;
+      if (next > totalPages) return totalPages;
+      return next;
+    });
+  };
 
   const filterStatuses = [
     "New Order",
@@ -240,12 +268,12 @@ function NewPrescriptionOrders() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredOrders.map((order, idx) => (
+                    {paginatedOrders.map((order, idx) => (
                       <tr
                         key={order.id}
                         className={
                           "text-slate-700 " +
-                          (idx !== filteredOrders.length - 1
+                          (idx !== paginatedOrders.length - 1
                             ? "border-b border-slate-100"
                             : "")
                         }
@@ -297,13 +325,19 @@ function NewPrescriptionOrders() {
 
               <div className="flex items-center justify-between rounded-b-[32px] border-t border-slate-100 px-8 py-4 text-[12px] text-slate-500">
                 <span>
-                  Showing {filteredOrders.length} of {orders.length} results
+                  Showing {paginatedOrders.length} of {totalFiltered} results
                 </span>
                 <div className="flex gap-2">
-                  <button className="rounded-xl border border-slate-200 px-5 py-1.5 text-[12px] text-slate-500 hover:bg-slate-50">
+                  <button
+                    className="rounded-xl border border-slate-200 px-5 py-1.5 text-[12px] text-slate-500 hover:bg-slate-50"
+                    onClick={() => goToPageDelta(-1)}
+                  >
                     Previous
                   </button>
-                  <button className="rounded-xl border border-slate-200 px-5 py-1.5 text-[12px] text-slate-500 hover:bg-slate-50">
+                  <button
+                    className="rounded-xl border border-slate-200 px-5 py-1.5 text-[12px] text-slate-500 hover:bg-slate-50"
+                    onClick={() => goToPageDelta(1)}
+                  >
                     Next
                   </button>
                 </div>

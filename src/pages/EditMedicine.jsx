@@ -12,6 +12,24 @@ function formatRupee(value) {
   return `₹${trimmed}`;
 }
 
+const STORAGE_KEY = "inventory_items";
+
+function loadInventoryItems() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length) {
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.error("Failed to load inventory items:", err);
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultItems));
+  return defaultItems;
+}
+
 function updateStrengthCombined(value, unit) {
   const v = value || "";
   const u = unit || "mg";
@@ -105,8 +123,7 @@ function EditMedicine() {
   // Load existing medicine from localStorage OR default items
   useEffect(() => {
     try {
-      const stored =
-        JSON.parse(localStorage.getItem("custom_medicines")) || [];
+      const stored = loadInventoryItems();
       let existing = stored.find((item) => item.id === numericId);
 
       // Fallback to default items if not in localStorage
@@ -252,10 +269,9 @@ function EditMedicine() {
     };
 
     try {
-      const existing =
-        JSON.parse(localStorage.getItem("custom_medicines")) || [];
+      const existing = loadInventoryItems();
 
-      // If exists in custom list, replace; otherwise, add
+      // Replace existing inventory entry or append if missing
       const existsIndex = existing.findIndex(
         (item) => item.id === numericId
       );
@@ -269,10 +285,7 @@ function EditMedicine() {
         updatedList = [...existing, updatedItem];
       }
 
-      localStorage.setItem(
-        "custom_medicines",
-        JSON.stringify(updatedList)
-      );
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedList));
     } catch (err) {
       console.error("Failed to update medicine:", err);
     }

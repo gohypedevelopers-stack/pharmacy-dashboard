@@ -97,12 +97,7 @@ const SettingsPage = () => {
                 <Toggle enabled={true} />
               </PreferenceRow>
 
-              <PreferenceRow
-                title="Language"
-                description="Choose your preferred language."
-              >
-                <LanguageSelect />
-              </PreferenceRow>
+              
             </div>
           </section>
 
@@ -161,17 +156,6 @@ const Toggle = ({ enabled }) => (
   </button>
 );
 
-const LanguageSelect = () => (
-  <div className="relative">
-    <select className="appearance-none h-9 rounded-full border border-slate-200 bg-white pl-4 pr-8 text-[13px] text-slate-700 outline-none focus:ring-1 focus:ring-emerald-500">
-      <option>English</option>
-      <option>Spanish</option>
-      <option>French</option>
-    </select>
-    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">
-      {"\u25BE"} {/* Down arrow/caret */}
-    </span>
-  </div>
-);
+
 
 export default SettingsPage;

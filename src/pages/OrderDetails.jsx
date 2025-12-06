@@ -16,6 +16,16 @@ const statusStyles = {
   Delivered: "bg-[#F3E8FF] text-[#7C3AED]",
 };
 
+// Timeline stages in order (Decline is separate)
+const ORDER_STAGES = [
+  "New Order",
+  "Accept Order",
+  "Processing",
+  "Ready for Delivery",
+  "Out for Delivery",
+  "Delivered",
+];
+
 // Same placeholder set (only used if storage somehow empty)
 const initialOrders = [
   {
@@ -75,15 +85,21 @@ const orderItems = [
   { name: "Vitamin C 1000mg", quantity: 1, price: 8 },
 ];
 
-const timelineSteps = [
-  { label: "Order Placed", detail: "24 June 2024, 10:30 AM", status: "completed" },
-  { label: "Order Accepted", detail: "24 June 2024, 10:31 AM", status: "completed" },
-  { label: "Medicines Prepared", detail: "", status: "pending" },
-  { label: "Ready for Pickup / Out for Delivery", detail: "", status: "pending" },
-];
-
 function formatCurrency(value) {
   return `$${value.toFixed(2)}`;
+}
+
+// Format timestamp like: "04 Dec 2025, 05:42 pm"
+function formatNow() {
+  const now = new Date();
+  return now.toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
 }
 
 function loadOrders() {
@@ -116,12 +132,44 @@ function OrderDetails() {
 
   const [order, setOrder] = useState(null);
 
+  // Load order & ensure "New Order" has a timestamp
   useEffect(() => {
     const allOrders = loadOrders();
     const numericId = Number(routeOrderId || state.orderId);
-    const found =
+    let found =
       allOrders.find((o) => o.id === numericId) ||
       (allOrders.length ? allOrders[0] : null);
+
+    if (!found) {
+      setOrder(null);
+      return;
+    }
+
+    if (!found.timeline) {
+      found = {
+        ...found,
+        timeline: {
+          "New Order": formatNow(),
+        },
+      };
+      const updated = allOrders.map((o) =>
+        o.id === found.id ? found : o
+      );
+      saveOrders(updated);
+    } else if (!found.timeline["New Order"]) {
+      found = {
+        ...found,
+        timeline: {
+          ...found.timeline,
+          "New Order": formatNow(),
+        },
+      };
+      const updated = allOrders.map((o) =>
+        o.id === found.id ? found : o
+      );
+      saveOrders(updated);
+    }
+
     setOrder(found);
   }, [routeOrderId, state.orderId]);
 
@@ -169,21 +217,54 @@ function OrderDetails() {
   const statusClass =
     statusStyles[orderStatus] || "bg-[#E3E8EF] text-[#475569]";
 
+  // Current timeline index (0 = New Order, 5 = Delivered)
+  const currentStatusIndex = ORDER_STAGES.indexOf(orderStatus);
+  const safeIndex = currentStatusIndex === -1 ? 0 : currentStatusIndex;
+
+  // Height of green progress line: a bit *past* the current circle
+  const greenProgressPercent =
+    ORDER_STAGES.length > 1
+      ? Math.min(
+          100,
+          ((safeIndex + (safeIndex > 0 ? 0.35 : 0)) /
+            (ORDER_STAGES.length - 1)) *
+            100
+        )
+      : 0;
+
+  // Update status + timeline + persist
   const updateOrderStatus = (newStatus) => {
     const all = loadOrders();
-    const updated = all.map((o) =>
-      o.id === order.id ? { ...o, status: newStatus } : o
-    );
+    const nowLabel = formatNow();
+
+    const updated = all.map((o) => {
+      if (o.id !== order.id) return o;
+
+      const existingTimeline = o.timeline || {};
+
+      return {
+        ...o,
+        status: newStatus,
+        timeline: {
+          ...existingTimeline,
+          "New Order":
+            existingTimeline["New Order"] || formatNow(),
+          [newStatus]: nowLabel,
+        },
+      };
+    });
+
     saveOrders(updated);
-    setOrder((prev) => ({ ...prev, status: newStatus }));
-    navigate("/orders");
+    const justUpdated = updated.find((o) => o.id === order.id);
+    setOrder(justUpdated); // re-render with new status & timeline
   };
 
   const handleDecline = () => updateOrderStatus("Decline Order");
   const handleAccept = () => updateOrderStatus("Accept Order");
   const handleProcessing = () => updateOrderStatus("Processing");
   const handleReady = () => updateOrderStatus("Ready for Delivery");
-  const handleOutForDelivery = () => updateOrderStatus("Out for Delivery");
+  const handleOutForDelivery = () =>
+    updateOrderStatus("Out for Delivery");
   const handleDelivered = () => updateOrderStatus("Delivered");
   const handleBack = () => navigate("/orders");
 
@@ -216,7 +297,6 @@ function OrderDetails() {
                 >
                   {orderStatus}
                 </span>
-                {/* Cross button */}
                 <button
                   onClick={handleBack}
                   className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50"
@@ -322,39 +402,66 @@ function OrderDetails() {
                   </div>
                 </section>
 
-                {/* Order Timeline */}
+                {/* Order Timeline – line & circles overlapping, live motion */}
                 <section className="rounded-[32px] border border-slate-100 bg-white p-6 shadow-[0_8px_30px_rgba(15,23,42,0.05)]">
                   <h2 className="text-lg font-semibold text-slate-900">
                     Order Timeline
                   </h2>
-                  <div className="mt-4 space-y-4 text-sm text-slate-600">
-                    {timelineSteps.map((step) => (
-                      <div key={step.label} className="flex items-center gap-3">
-                        <span
-                          className={`h-3.5 w-3.5 rounded-full ${
-                            step.status === "completed"
-                              ? "bg-[#00b074]"
-                              : "border border-slate-300 bg-white"
-                          }`}
-                        />
-                        <div className="flex-1">
-                          <p className="font-semibold text-slate-900">
-                            {step.label}
-                          </p>
-                          {step.detail && (
-                            <p className="text-[13px] text-slate-500">
-                              {step.detail}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+
+                  <div className="mt-4 relative">
+                    {/* Full grey line */}
+                    <div className="absolute left-[31px] top-2 bottom-6 w-[4px] bg-[#e5e7eb] overflow-hidden">
+                      {/* Animated green part */}
+                      <div
+                        className="absolute left-0 top-0 w-full bg-[#00b074] transition-all duration-800 ease-out"
+                        style={{
+                          height: `${greenProgressPercent}%`,
+                        }}
+                      />
+                    </div>
+
+                    {/* Steps */}
+                    <div className="space-y-6 pl-6 text-sm text-slate-600">
+                      {ORDER_STAGES.map((stage, idx) => {
+                        // Every stage up to and including current index is completed
+                        const isCompleted = idx <= safeIndex;
+
+                        return (
+                          <div
+                            key={stage}
+                            className="relative flex items-start gap-3"
+                          >
+                            {/* Circle exactly on the line */}
+                            <span
+                              className={
+                                "absolute left-[1px] mt-0.5 h-4 w-4 rounded-full border-2 flex-shrink-0 " +
+                                (isCompleted
+                                  ? "bg-[#00b074] border-[#00b074]"
+                                  : "border-[#d4d9e3] bg-white")
+                              }
+                            />
+
+                            {/* Text block */}
+                            <div className="pl-9">
+                              <p className="font-semibold text-slate-900">
+                                {stage}
+                              </p>
+                              {order.timeline?.[stage] && (
+                                <p className="text-[13px] text-slate-500">
+                                  {order.timeline[stage]}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </section>
               </div>
             </div>
 
-            {/* Bottom buttons – update status & go back */}
+            {/* Bottom buttons */}
             <div className="mt-10 flex flex-wrap items-center justify-end gap-3">
               <button
                 onClick={handleDecline}

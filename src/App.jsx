@@ -21,6 +21,7 @@ export default function App() {
   <Route path="/orders/:orderId" element={<OrderDetails />} />
   <Route path="/inventory" element={<InventoryList />} />
   <Route path="/inventory/add" element={<AddNewMedicine />} />
+  <Route path="/add-medicine" element={<AddNewMedicine />} />
   <Route path="/inventory/edit/:id" element={<EditMedicine />} />
   <Route path="/earnings" element={<EarningsOverview />} />
   <Route path="/settings" element={<SettingsPage />} />
