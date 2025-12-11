@@ -122,11 +122,13 @@ function DashboardOverview() {
       setErrorMessage("");
       try {
         const [ordersRes, productsRes] = await Promise.all([
-          apiRequest("/api/pharmacy/orders/me", { token: sessionToken }),
+          apiRequest("/api/pharmacy/orders", { token: sessionToken }),
           apiRequest("/api/pharmacy/products?limit=100", { token: sessionToken }),
         ]);
         if (isCancelled) return;
-        setRecentOrders(ordersRes?.data ?? []);
+        // Response is paginated from /api/pharmacy/orders
+        const ordersData = ordersRes?.data?.items ?? ordersRes?.data ?? [];
+        setRecentOrders(ordersData);
         setInventoryItems(productsRes?.data?.items ?? []);
       } catch (error) {
         console.error("Unable to load pharmacy dashboard data:", error);
@@ -151,11 +153,11 @@ function DashboardOverview() {
       const timeLabel = order.time
         ? order.time
         : createdAt
-        ? `${createdAt.toLocaleTimeString("en-IN", {
+          ? `${createdAt.toLocaleTimeString("en-IN", {
             hour: "2-digit",
             minute: "2-digit",
           })}, ${order.metadata?.deliveryType ?? "Home Delivery"}`
-        : "—";
+          : "—";
 
       return {
         id: order._id ?? order.id,
@@ -252,10 +254,10 @@ function DashboardOverview() {
   const statusMessage = errorMessage
     ? errorMessage
     : !sessionToken
-    ? "Login with your pharmacy account to load live data."
-    : loadingData
-    ? "Syncing with the backend…"
-    : "";
+      ? "Login with your pharmacy account to load live data."
+      : loadingData
+        ? "Syncing with the backend…"
+        : "";
 
   const recentSlice = ordersForDisplay.slice(0, 4);
 
@@ -345,10 +347,9 @@ function DashboardOverview() {
                           </td>
                           <td className="px-6 py-3">
                             <span
-                              className={`inline-flex rounded-xl px-3 py-1 text-[11px] font-semibold ${
-                                statusStyles[order.status] ||
+                              className={`inline-flex rounded-xl px-3 py-1 text-[11px] font-semibold ${statusStyles[order.status] ||
                                 "bg-[#E3E8EF] text-[#475569]"
-                              }`}
+                                }`}
                             >
                               {order.status}
                             </span>

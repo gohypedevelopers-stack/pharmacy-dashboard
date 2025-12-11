@@ -276,7 +276,7 @@ export default function App() {
           <Route path="/pharmacy" element={<DashboardOverview />} />
           <Route path="/pharmacy/inventory" element={<InventoryList />} />
           <Route path="/pharmacy/orders" element={<NewPrescriptionOrders />} />
-          <Route path="/pharmacy/orders/:id" element={<OrderDetails />} />
+          <Route path="/pharmacy/orders/:orderId" element={<OrderDetails />} />
           <Route path="/pharmacy/add-medicine" element={<AddNewMedicine />} />
           <Route
             path="/pharmacy/edit-medicine/:id"
@@ -288,7 +288,7 @@ export default function App() {
           <Route path="/pharmacy/store-profile" element={<StoreProfile />} />
           <Route path="/pharmacy/support" element={<Support />} />
           <Route path="/orders" element={<NewPrescriptionOrders />} />
-          <Route path="/orders/:id" element={<OrderDetails />} />
+          <Route path="/orders/:orderId" element={<OrderDetails />} />
           <Route path="/inventory" element={<InventoryList />} />
           <Route path="/inventory/add" element={<AddNewMedicine />} />
           <Route path="/inventory/edit/:id" element={<EditMedicine />} />

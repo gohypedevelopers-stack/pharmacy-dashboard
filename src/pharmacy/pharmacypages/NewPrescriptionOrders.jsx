@@ -70,9 +70,11 @@ function NewPrescriptionOrders() {
       setLoadingOrders(true);
       setErrorMessage("");
       try {
-        const response = await apiRequest("/api/pharmacy/orders/me", { token });
+        const response = await apiRequest("/api/pharmacy/orders", { token });
         if (!cancelled) {
-          setOrders(response?.data ?? []);
+          // Response is paginated: { data: { items: [], pagination: {} } }
+          const items = response?.data?.items ?? response?.data ?? [];
+          setOrders(items);
         }
       } catch (error) {
         console.error("Unable to load pharmacy orders:", error);
@@ -286,9 +288,9 @@ function NewPrescriptionOrders() {
                         const createdAt = order.createdAt ? new Date(order.createdAt) : null;
                         const timeLabel = createdAt
                           ? `${createdAt.toLocaleTimeString("en-IN", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}, ${order.metadata?.deliveryType ?? "Home Delivery"}`
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}, ${order.metadata?.deliveryType ?? "Home Delivery"}`
                           : "-";
                         const statusLabel = getStatusLabel(order.status);
                         const statusClass = statusStyles[statusLabel] ||
