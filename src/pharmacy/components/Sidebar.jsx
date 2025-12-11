@@ -21,7 +21,7 @@ const NavItem = ({ label, icon, to }) => {
   return (
     <Link
       to={to}
-      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition ${
+      className={`w-full flex items-center gap-3 pl-0 pr-4 py-2.5 rounded-xl transition ${
         isActive
           ? "bg-[#E8FBF3] text-emerald-600 font-medium"
           : "text-slate-500 hover:bg-slate-50"
@@ -51,27 +51,25 @@ const Sidebar = () => {
   const statusLabel = (pharmacy?.status ?? "pending").toUpperCase();
   return (
     <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-slate-100">
-      <div className="px-6 pt-6 pb-5 border-b border-slate-100">
+      <div className="pl-0 pr-2 pt-6 pb-5 border-b border-slate-100">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center">
             <img
               src={storePanelLogo}
               alt="City Pharmacy logo"
-              className="h-8 w-8 rounded-lg object-contain"
+              className="h-15 w-16 rounded-lg object-contain"
             />
           </div>
           <div>
             <h1 className="font-semibold text-slate-900 text-[18px]">
               {storeName}
             </h1>
-            <p className="text-[13px] text-slate-400">
-              {statusLabel} | Store Panel
-            </p>
+            
           </div>
         </div>
       </div>
 
-      <nav className="flex-1 px-3 py-5 text-[13px] space-y-1">
+      <nav className="flex-1 pl-0 pr-3 py-9 text-[15px] space-y-2">
         <NavItem label="Dashboard" icon={dashboardIcon} to="/pharmacy" />
         <NavItem label="Orders" icon={orderIcon} to="/pharmacy/orders" />
         <NavItem label="Inventory" icon={inventoryIcon} to="/pharmacy/inventory" />

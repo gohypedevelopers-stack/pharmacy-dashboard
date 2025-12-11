@@ -41,6 +41,7 @@ function EditMedicine() {
     strength: "",
     images: [],
     status: "active",
+    expiry: "",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -73,6 +74,7 @@ function EditMedicine() {
           strength: product.strength ?? "",
           images: product.images ?? [],
           status: product.status ?? "active",
+          expiry: product.expiry ?? "",
         });
       } catch (err) {
         console.error("Failed to load product", err);
@@ -113,6 +115,7 @@ function EditMedicine() {
           category: formData.category,
           dosageForm: formData.dosageForm,
           strength: formData.strength,
+          expiry: formData.expiry,
           status: formData.status,
         },
       });

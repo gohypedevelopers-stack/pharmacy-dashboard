@@ -4,7 +4,10 @@ import Sidebar from "../../pharmacy/components/Sidebar.jsx";
 import bellicon from "../../pharmacy/assets/bellicon.png";
 import pharmacyProfile from "../../pharmacy/assets/pharmacyprofile.png";
 import { apiRequest } from "../../lib/api.js";
-import { getPharmacyToken } from "../../lib/pharmacySession.js";
+import {
+  getPharmacySession,
+  getPharmacyToken,
+} from "../../lib/pharmacySession.js";
 
 const statusStyles = {
   "In Stock": "bg-[#e8fff4] text-[#00b074]",
@@ -43,6 +46,10 @@ const InventoryList = () => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const token = getPharmacyToken();
+  const session = getPharmacySession();
+  const userRole = (session?.user?.role ?? "").toLowerCase();
+  const canAddMedicine =
+    Boolean(token) && ["admin", "pharmacy"].includes(userRole);
   const pageSize = 10;
 
   useEffect(() => {
@@ -179,12 +186,22 @@ const InventoryList = () => {
                 <option value="asc">Sort by Expiry Date (Asc)</option>
                 <option value="desc">Sort by Expiry Date (Desc)</option>
               </select>
-              <button
-                onClick={() => navigate("/pharmacy/add-medicine")}
-                className="ml-auto rounded-full bg-emerald-500 px-5 py-3 text-sm font-semibold text-white shadow-lg hover:bg-emerald-600"
-              >
-                Add New Medicine
-              </button>
+              <div className="ml-auto flex-shrink-0">
+                {canAddMedicine ? (
+                  <button
+                    onClick={() => navigate("/pharmacy/add-medicine")}
+                    className="rounded-full bg-emerald-500 px-5 py-3 text-sm font-semibold text-white shadow-lg hover:bg-emerald-600"
+                  >
+                    Add New Medicine
+                  </button>
+                ) : (
+                  <span className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-500">
+                    {token
+                      ? "Admin or pharmacy access required."
+                      : "Log in as pharmacy to add medicine."}
+                  </span>
+                )}
+              </div>
             </div>
 
             {error && (
@@ -215,6 +232,11 @@ const InventoryList = () => {
                         typeof item.price === "number"
                           ? item.price
                           : Number(item.price) || Number(item.mrp) || 0;
+                      const rawExpiry = item.expiry ?? item.expiryDate ?? "";
+                      const expiryDisplay =
+                        typeof rawExpiry === "string" && rawExpiry.trim()
+                          ? rawExpiry.trim()
+                          : "-";
                       return (
                         <tr
                           key={item._id ?? item.sku ?? index}
@@ -231,7 +253,7 @@ const InventoryList = () => {
                             {formatCurrency(priceValue)}
                           </td>
                           <td className="px-6 py-3 text-slate-700">
-                            {item.expiry ?? item.expiryDate ?? "—"}
+                            {expiryDisplay}
                           </td>
                           <td className="px-6 py-3">
                             <span

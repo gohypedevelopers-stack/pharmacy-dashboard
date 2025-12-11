@@ -81,10 +81,7 @@ export default function Navbar({
           {hasPharmacySession ? (
             <div className="flex items-center gap-3">
               <div className="text-right">
-                <p className="text-sm font-semibold text-slate-900">{pharmacyName}</p>
-                <p className="text-xs text-slate-500">
-                  {pharmacySession?.pharmacy?.status?.toUpperCase() ?? "Partner"}
-                </p>
+                
               </div>
               <button
                 type="button"

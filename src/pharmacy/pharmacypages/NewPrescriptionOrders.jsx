@@ -195,7 +195,7 @@ function NewPrescriptionOrders() {
                 <div className="w-full lg:max-w-md">
                   <div className="flex items-center gap-3 rounded-2xl bg-[#f7fafc] px-5 py-4 shadow-[0_8px_25px_rgba(15,23,42,0.03)]">
                     <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm">
-                      <span className="text-slate-400 text-lg">S</span>
+                      <span className="text-slate-400 text-lg">🔍</span>
                     </div>
                     <input
                       type="text"
@@ -324,7 +324,7 @@ function NewPrescriptionOrders() {
                             <td className="px-8 py-4 text-right">
                               <Link
                                 to={`/pharmacy/orders/${orderId}`}
-                                className="rounded-xl bg-[#00b074] px-5 py-1.5 text-[12px] font-semibold text-white shadow-[0_8px_20px_rgba(0,176,116,0.45)] transition hover:bg-[#049662]"
+  className="inline-flex items-center justify-center whitespace-nowrap rounded-full bg-[#00b074] px-5 py-1.5 text-[12px] font-semibold text-white shadow-[0_8px_20px_rgba(0,176,116,0.45)] transition hover:bg-[#049662]"
                               >
                                 View Order
                               </Link>

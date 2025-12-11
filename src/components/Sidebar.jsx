@@ -20,7 +20,7 @@ const NavItem = ({ label, icon, to }) => {
   return (
     <Link
       to={to}
-      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition ${
+      className={`w-full flex items-center gap-3 px-2 py-2.5 rounded-xl transition ${
         isActive
           ? "bg-[#E8FBF3] text-emerald-600 font-medium"
           : "text-slate-500 hover:bg-slate-50"
@@ -45,7 +45,7 @@ const NavItem = ({ label, icon, to }) => {
 
 const Sidebar = () => {
   return (
-    <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-slate-100">
+    <aside className="hidden lg:flex flex-col w-30 bg-white border-r border-slate-100">
       <div className="px-6 pt-6 pb-5 border-b border-slate-100">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center">
