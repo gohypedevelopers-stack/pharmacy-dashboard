@@ -151,31 +151,19 @@ function NewPrescriptionOrders() {
         <Sidebar />
 
         <div className="flex flex-1 flex-col">
-          {/* Header */}
-          <header className="flex items-center justify-between border-b border-slate-100 bg-white px-10 py-5">
-            <div className="flex items-center gap-4">
-              <h1 className="text-[18px] font-semibold text-slate-900">
-                New Prescription Orders
-              </h1>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <button className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
-                <img
-                  src={bellicon}
-                  alt="Notifications"
-                  className="h-5 w-5 object-contain"
-                />
-              </button>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#ffe9d6]">
-                <img
-                  src={pharmacyProfile}
-                  alt="Profile"
-                  className="h-8 w-8 rounded-full object-cover"
-                />
-              </div>
-            </div>
-          </header>
+                 <header className="flex items-center justify-between border-b border-slate-100 bg-white px-10 py-5">
+                   <h1 className="text-[18px] font-semibold text-slate-900">
+                     New Prescription Orders
+                   </h1>
+                   <div className="flex items-center gap-4">
+                     <button className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                       <img src={bellicon} alt="Notifications" />
+                     </button>
+                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#ffe9d6]">
+                       <img src={pharmacyProfile} alt="Profile" />
+                     </div>
+                   </div>
+                 </header>
 
           {/* Body */}
           <main className="flex-1 overflow-y-auto bg-[#f6fafb] px-10 py-7">

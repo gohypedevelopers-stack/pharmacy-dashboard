@@ -2,6 +2,9 @@
 import React from "react";
 import Sidebar from "../../pharmacy/components/Sidebar.jsx"; // Now importing the defined Sidebar
 
+import bellicon from "../../pharmacy/assets/bellicon.png";
+import pharmacyProfile from "../../pharmacy/assets/pharmacyprofile.png";
+
 const SettingsPage = () => {
   return (
     <div className="min-h-screen bg-[#F3F7F6] flex text-slate-800">
@@ -9,18 +12,26 @@ const SettingsPage = () => {
       <Sidebar />
 
       {/* MAIN */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <header className="h-20 bg-[#F3F7F6] border-b border-transparent flex items-center justify-between px-4 md:px-8">
-          <div>
-            <h2 className="font-semibold text-slate-900 text-[20px]">
-              General Settings
-            </h2>
-            <p className="text-[12px] text-slate-400">
+      
+
+         <div className="flex flex-1 flex-col">
+          <header className="flex items-center justify-between border-b border-slate-100 bg-white px-10 py-5">
+           <div>
+            <h1 className="text-[18px] font-semibold text-slate-900">
+General Settings            </h1>
+<span className="text-[12px] text-slate-400">
               Manage your profile, pharmacy details, and general preferences.
-            </p>
-          </div>
-        </header>
+            </span>
+            </div>
+            <div className="flex items-center gap-4">
+              <button className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                <img src={bellicon} alt="Notifications" />
+              </button>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#ffe9d6]">
+                <img src={pharmacyProfile} alt="Profile" />
+              </div>
+            </div>
+          </header>
 
         {/* Content */}
         <main className="flex-1 p-4 md:p-8 space-y-5 max-w-5xl">
