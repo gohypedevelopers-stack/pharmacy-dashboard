@@ -10,15 +10,35 @@ import bellicon from "../../pharmacy/assets/bellicon.png";
 import pharmacyProfile from "../../pharmacy/assets/pharmacyprofile.png";
 
 const statusStyles = {
-  New: "bg-[#E3E8EF] text-[#475569]",
-  "New Order": "bg-[#E3E8EF] text-[#475569]",
-  "Pending": "bg-[#E3E8EF] text-[#475569]",
-  "Decline Order": "bg-[#FEE2E2] text-[#B91C1C]",
-  "Accept Order": "bg-[#E8FFF4] text-[#00B074]",
+  Pending: "bg-[#E3E8EF] text-[#475569]",
   Processing: "bg-[#FFF6DD] text-[#D19A1A]",
   "Ready for Delivery": "bg-[#FEF3C7] text-[#B45309]",
   "Out for Delivery": "bg-[#DBEAFE] text-[#1D4ED8]",
   Delivered: "bg-[#F3E8FF] text-[#7C3AED]",
+  Cancelled: "bg-[#FEE2E2] text-[#B91C1C]",
+};
+
+const friendlyStatusLabels = {
+  pending: "Pending",
+  processing: "Processing",
+  ready_for_delivery: "Ready for Delivery",
+  out_for_delivery: "Out for Delivery",
+  delivered: "Delivered",
+  cancelled: "Cancelled",
+};
+
+const getStatusKey = (status) => (status ? status.toString().toLowerCase() : "pending");
+
+const getStatusLabel = (status) => {
+  if (!status) return "Pending";
+  const raw = status.toString().toLowerCase();
+  return (
+    friendlyStatusLabels[raw] ??
+    status
+      .toString()
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase())
+  );
 };
 
 const chartData = [
@@ -50,14 +70,6 @@ const formatCurrency = (value) => {
     currency: "INR",
     maximumFractionDigits: 0,
   }).format(value);
-};
-
-const formatStatusLabel = (value) => {
-  if (!value) return "New Order";
-  return value
-    .toString()
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
 const ChartBar = ({ label, value, type }) => {
@@ -159,6 +171,8 @@ function DashboardOverview() {
           })}, ${order.metadata?.deliveryType ?? "Home Delivery"}`
           : "—";
 
+      const statusLabel = getStatusLabel(order.status ?? order.STATUS);
+      const statusKey = getStatusKey(order.status ?? order.STATUS);
       return {
         id: order._id ?? order.id,
         patientName:
@@ -170,8 +184,8 @@ function DashboardOverview() {
           order.prescriptionId ?? order.orderId ?? `ORD-${order._id?.slice(-6) ?? 0}`,
         medicineCount,
         time: timeLabel,
-        status: formatStatusLabel(order.status ?? order.STATUS),
-        STATUS_INTERNAL: (order.status ?? order.STATUS ?? "").toLowerCase(),
+        status: statusLabel,
+        STATUS_INTERNAL: statusKey,
       };
     });
   }, [recentOrders]);
@@ -386,7 +400,7 @@ function DashboardOverview() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-              <div className="bg-white p-6 rounded-xl shadow-[0_16px_40px_rgba(15,23,42,0.04)] border border-slate-100">
+              <div className="bg-white px-2 pt-5 pb-3 py-0 rounded-xl shadow-[0_16px_40px_rgba(15,23,42,0.04)] border border-slate-100">
                 <h2 className="text-[16px] font-semibold text-slate-900 mb-4">
                   Quick Actions
                 </h2>
@@ -408,6 +422,36 @@ function DashboardOverview() {
                     colorClass="bg-emerald-700 shadow-[0_12px_30px_rgba(16,185,129,0.1)]"
                     icon="📄"
                   />
+                </div>
+              </div>
+
+              <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-[0_16px_40px_rgba(15,23,42,0.04)] border border-slate-100">
+                <header className="flex justify-between items-center mb-6">
+                  <h2 className="text-[16px] font-semibold text-slate-900">
+                    Earnings Analytics
+                  </h2>
+                  <div className="flex text-[12px] font-medium text-slate-500 space-x-3">
+                    <button className="text-emerald-600 font-semibold border-b-2 border-emerald-500">
+                      Weekly
+                    </button>
+                    <button className="hover:text-slate-700">Monthly</button>
+                    <button className="hover:text-slate-700">Yearly</button>
+                  </div>
+                </header>
+                <div className="relative h-101 flex items-end">
+                  <div className="absolute left-0 bottom-0 top-0 flex flex-col justify-between h-full py-2 pr-3 text-[11px] text-slate-400">
+                    <span>100K</span>
+                    <span>80K</span>
+                    <span>60K</span>
+                    <span>40K</span>
+                    <span>20K</span>
+                    <span>0</span>
+                  </div>
+                  <div className="flex flex-1 justify-around pl-8 h-full border-l border-b border-slate-100">
+                    {chartData.map((data) => (
+                      <ChartBar key={data.label} {...data} />
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -449,35 +493,7 @@ function DashboardOverview() {
                 </div>
               </div>
 
-              <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-[0_16px_40px_rgba(15,23,42,0.04)] border border-slate-100">
-                <header className="flex justify-between items-center mb-6">
-                  <h2 className="text-[16px] font-semibold text-slate-900">
-                    Earnings Analytics
-                  </h2>
-                  <div className="flex text-[12px] font-medium text-slate-500 space-x-3">
-                    <button className="text-emerald-600 font-semibold border-b-2 border-emerald-500">
-                      Weekly
-                    </button>
-                    <button className="hover:text-slate-700">Monthly</button>
-                    <button className="hover:text-slate-700">Yearly</button>
-                  </div>
-                </header>
-                <div className="relative h-101 flex items-end">
-                  <div className="absolute left-0 bottom-0 top-0 flex flex-col justify-between h-full py-2 pr-3 text-[11px] text-slate-400">
-                    <span>100K</span>
-                    <span>80K</span>
-                    <span>60K</span>
-                    <span>40K</span>
-                    <span>20K</span>
-                    <span>0</span>
-                  </div>
-                  <div className="flex flex-1 justify-around pl-8 h-full border-l border-b border-slate-100">
-                    {chartData.map((data) => (
-                      <ChartBar key={data.label} {...data} />
-                    ))}
-                  </div>
-                </div>
-              </div>
+              
             </div>
           </main>
         </div>

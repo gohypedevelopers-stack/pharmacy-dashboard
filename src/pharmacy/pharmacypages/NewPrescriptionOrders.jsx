@@ -153,7 +153,7 @@ function NewPrescriptionOrders() {
         <div className="flex flex-1 flex-col">
                  <header className="flex items-center justify-between border-b border-slate-100 bg-white px-10 py-5">
                    <h1 className="text-[18px] font-semibold text-slate-900">
-                     New Prescription Orders
+                     New Prescription Orderss
                    </h1>
                    <div className="flex items-center gap-4">
                      <button className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-500">

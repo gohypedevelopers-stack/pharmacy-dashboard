@@ -52,7 +52,7 @@ export default function UpdateStock() {
 
           <div className="space-y-4 text-[14px]">
             <p className="text-slate-700">
-              <span className="font-semibold">Medicine Name:</span> {medicine.name}
+              <span className="font-semibold">Medicine Names:</span> {medicine.name}
             </p>
 
             <p className="text-slate-700">
