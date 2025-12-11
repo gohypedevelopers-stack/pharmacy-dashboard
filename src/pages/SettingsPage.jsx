@@ -11,9 +11,9 @@ const SettingsPage = () => {
       {/* MAIN */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <header className="h-20 bg-[#F3F7F6] border-b border-transparent flex items-center justify-between px-4 md:px-8">
+<header className="h-20 bg-white border-b border-transparent flex items-center justify-between px-4 md:px-8">
           <div>
-            <h2 className="font-semibold text-slate-900 text-[20px]">
+            <h2 className="font-semibold text-slate-900 text-[20px] ">
               General Settings
             </h2>
             <p className="text-[12px] text-slate-400">

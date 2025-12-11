@@ -160,7 +160,7 @@ function NewPrescriptionOrders() {
             </div>
 
             <div className="flex items-center gap-4">
-              <button className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100">
+              <button className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
                 <img
                   src={bellicon}
                   alt="Notifications"
