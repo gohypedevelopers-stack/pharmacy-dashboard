@@ -1,7 +1,7 @@
 // src/pages/UpdateStock.jsx
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import Sidebar from "../components/Sidebar";
+import Sidebar from "../pharmacy/components/Sidebar";
 
 const STORAGE_KEY = "inventory_items";
 

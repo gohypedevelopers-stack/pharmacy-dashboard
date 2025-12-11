@@ -1,11 +1,60 @@
 // src/pages/SettingsPage.jsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Sidebar from "../../pharmacy/components/Sidebar.jsx"; // Now importing the defined Sidebar
 
 import bellicon from "../../pharmacy/assets/bellicon.png";
 import pharmacyProfile from "../../pharmacy/assets/pharmacyprofile.png";
+import { apiRequest } from "../../lib/api.js";
+import {
+  getPharmacySession,
+  getPharmacyToken,
+} from "../../lib/pharmacySession.js";
+
+const formatAddress = (address) => {
+  if (!address) return "";
+  const parts = [
+    address.line1,
+    address.line2,
+    address.city,
+    address.state,
+    address.pincode,
+  ];
+  return parts.filter(Boolean).join(", ");
+};
 
 const SettingsPage = () => {
+  const [profileData, setProfileData] = useState({
+    storeName: "",
+    ownerName: "",
+    phoneNumber: "",
+    storeAddress: "",
+  });
+  const token = getPharmacyToken();
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    const fetchProfile = async () => {
+      try {
+        const response = await apiRequest("/api/pharmacy/profile", { token });
+        if (cancelled) return;
+        const data = response?.data ?? {};
+        setProfileData({
+          storeName: data.storeName ?? "",
+          ownerName: data.ownerName ?? "",
+          phoneNumber: data.phoneNumber ?? "",
+          storeAddress: formatAddress(data.address),
+        });
+      } catch (error) {
+        console.error("Unable to load pharmacy profile for settings:", error);
+      }
+    };
+
+    fetchProfile();
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
   return (
     <div className="min-h-screen bg-[#F3F7F6] flex text-slate-800">
       {/* SIDEBAR is now a component wrapping the whole page layout */}
@@ -46,16 +95,19 @@ General Settings            </h1>
             <div className="space-y-4 text-[13px]">
               <div className="grid md:grid-cols-2 gap-4">
                 <Field label="Full Name">
-                  <Input defaultValue="John Doe" />
+                  <Input value={profileData.ownerName} readOnly />
                 </Field>
                 <Field label="Email Address">
-                  <Input defaultValue="john.doe@greenleaf.com" />
+                  <Input
+                    value={getPharmacySession()?.user?.email ?? ""}
+                    readOnly
+                  />
                 </Field>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
                 <Field label="Contact Number">
-                  <Input defaultValue="+1 (555) 123-4567" />
+                  <Input value={profileData.phoneNumber} readOnly />
                 </Field>
               </div>
             </div>
@@ -69,10 +121,10 @@ General Settings            </h1>
               </h3>
             </header>
 
-            <div className="space-y-4 text-[13px]">
+              <div className="space-y-4 text-[13px]">
               <div className="grid md:grid-cols-2 gap-4">
                 <Field label="Store Name">
-                  <Input defaultValue="GreenLeaf Central Pharmacy" />
+                  <Input value={profileData.storeName} readOnly />
                 </Field>
                 <Field label="Hours of Operation">
                   <Input defaultValue="9:00 AM - 7:00 PM, Mon-Sat" />
@@ -80,7 +132,7 @@ General Settings            </h1>
               </div>
 
               <Field label="Store Address">
-                <Input defaultValue="123 Health Ave, Wellness City, ST 12345" />
+                <Input value={profileData.storeAddress} readOnly />
               </Field>
             </div>
           </section>

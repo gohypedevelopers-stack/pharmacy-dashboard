@@ -17,7 +17,7 @@ import EarningsOverview from "./pharmacy/pharmacypages/EarningsOverview.jsx";
 import SettingsPage from "./pharmacy/pharmacypages/SettingsPage.jsx";
 import AddNewMedicine from "./pharmacy/pharmacypages/AddNewMedicine.jsx";
 import EditMedicine from "./pharmacy/pharmacypages/EditMedicine.jsx";
-import UpdateStock from "./pharmacy/pharmacypages/UpdateStock.jsx";
+import UpdateStock from "./pages/UpdateStock.jsx";
 import StoreProfile from "./pharmacy/pharmacypages/StoreProfile.jsx";
 import Support from "./pharmacy/pharmacypages/Support.jsx";
 
