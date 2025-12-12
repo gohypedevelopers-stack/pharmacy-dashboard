@@ -206,10 +206,26 @@ function AddNewMedicine() {
                       onChange={handleChange}
                       className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-[13px]"
                     >
-                      <option>Tablets</option>
-                      <option>Capsules</option>
-                      <option>Syrups</option>
-                      <option>Others</option>
+                      <option>Tablet</option>
+                      <option>Capsule</option>
+                      <option>Syrup</option>
+                      <option>Suspension</option>
+                      <option>Solution</option>
+                      <option>Drops</option>
+                      <option>Injection</option>
+                      <option>Cream</option>
+                      <option>Ointment</option>
+                      <option>Gel</option>
+                      <option>Lotion</option>
+                      <option>Powder</option>
+                      <option>Granules/Sachet</option>
+                      <option>Spray</option>
+                      <option>Inhaler</option>
+                      <option>Nebulizer Solution</option>
+                      <option>Mouthwash/Gargle</option>
+                      <option>Lozenge</option>
+                      <option>Suppository</option>
+                      <option>Patch</option>
                     </select>
                   </Field>
                 </div>

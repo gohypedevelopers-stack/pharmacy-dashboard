@@ -16,7 +16,29 @@ const statusStyles = {
 };
 
 const statusOptions = ["All", "In Stock", "Low Stock", "Out of Stock"];
-const categoryOptions = ["All"];
+const CATEGORY_OPTIONS = [
+  "All",
+  "Tablet",
+  "Capsule",
+  "Syrup",
+  "Suspension",
+  "Solution",
+  "Drops",
+  "Injection",
+  "Cream",
+  "Ointment",
+  "Gel",
+  "Lotion",
+  "Powder",
+  "Granules/Sachet",
+  "Spray",
+  "Inhaler",
+  "Nebulizer Solution",
+  "Mouthwash/Gargle",
+  "Lozenge",
+  "Suppository",
+  "Patch",
+];
 
 const formatCurrency = (value) => {
   if (typeof value === "number" && !Number.isNaN(value)) {
@@ -34,6 +56,23 @@ function deriveStatus(stock) {
   if (stock <= 200) return "Low Stock";
   return "In Stock";
 }
+
+const normalizeCategoryValue = (value) =>
+  (value ?? "")
+    .toString()
+    .trim()
+    .toLowerCase();
+
+const matchesCategoryFilter = (itemCategory, activeCategory) => {
+  if (activeCategory === "All") return true;
+  const activeNormalized = normalizeCategoryValue(activeCategory);
+  const itemNormalized = normalizeCategoryValue(itemCategory);
+  if (!itemNormalized) return false;
+  if (itemNormalized === activeNormalized) return true;
+  if (itemNormalized === `${activeNormalized}s`) return true;
+  if (itemNormalized === `${activeNormalized}es`) return true;
+  return false;
+};
 
 const InventoryList = () => {
   const navigate = useNavigate();
@@ -86,10 +125,6 @@ const InventoryList = () => {
   }, [token]);
 
   const normalizedSearch = searchTerm.trim().toLowerCase();
-  const categoryFilters = useMemo(
-    () => Array.from(new Set(["All", ...items.map((item) => item.category).filter(Boolean)])),
-    [items]
-  );
   const totalMedicines = useMemo(() => items.length, [items]);
   const totalStockUnits = useMemo(
     () =>
@@ -105,9 +140,7 @@ const InventoryList = () => {
       .filter((item) => {
         const status = deriveStatus(item.stock ?? item.quantity ?? 0);
         const matchesStatus = activeStatus === "All" || status === activeStatus;
-        const matchesCategory =
-          activeCategory === "All" ||
-          (item.category ?? "").toLowerCase() === activeCategory.toLowerCase();
+        const matchesCategory = matchesCategoryFilter(item.category, activeCategory);
         const matchesSearch =
           normalizedSearch === "" ||
           item.name?.toLowerCase().includes(normalizedSearch) ||
@@ -205,9 +238,9 @@ const InventoryList = () => {
                 onChange={(event) => setActiveCategory(event.target.value)}
                 className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:outline-none"
               >
-                {categoryFilters.map((option) => (
+                {CATEGORY_OPTIONS.map((option) => (
                   <option key={option} value={option}>
-                    Filter by Category: {option}
+                    {option === "All" ? "All Categories" : option}
                   </option>
                 ))}
               </select>
