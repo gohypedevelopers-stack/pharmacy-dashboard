@@ -5,7 +5,6 @@ import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { State, City } from "country-state-city";
 import { apiRequest } from "../lib/api.js";
-import PharmacyOtpModal from "./PharmacyOtpModal.jsx";
 
 const COUNTRY_CODE = "IN";
 
@@ -51,9 +50,6 @@ export default function PharmacyDeliverySignupModal({
   const [showConfirm, setShowConfirm] = useState(false);
 
   const [cityOptions, setCityOptions] = useState([]);
-  const [isVerificationOpen, setIsVerificationOpen] = useState(false);
-  const [verificationEmail, setVerificationEmail] = useState("");
-  const [pendingSignupResponse, setPendingSignupResponse] = useState(null);
   const stateOptions = useMemo(() => State.getStatesOfCountry(COUNTRY_CODE), []);
 
   useEffect(() => {
@@ -62,19 +58,6 @@ export default function PharmacyDeliverySignupModal({
       setForm((prev) => ({ ...prev, city: "" }));
     }
   }, [form.state]);
-
-  const handleVerificationClose = () => {
-    setIsVerificationOpen(false);
-    setVerificationEmail("");
-    setPendingSignupResponse(null);
-  };
-
-  const handleOtpVerified = () => {
-    const emailForCallback = verificationEmail;
-    const responseForCallback = pendingSignupResponse;
-    handleVerificationClose();
-    onSuccess?.(emailForCallback, responseForCallback);
-  };
 
   const closeModal = () => {
     handleVerificationClose();
@@ -150,11 +133,7 @@ export default function PharmacyDeliverySignupModal({
         },
       });
 
-      const submittedEmail = form.email;
-
-      setVerificationEmail(submittedEmail);
-      setPendingSignupResponse(response);
-      setIsVerificationOpen(true);
+      onSuccess?.(form.email);
 
       // reset form after successful submit
       setForm({
@@ -525,12 +504,6 @@ export default function PharmacyDeliverySignupModal({
         </div>
       </div>
     </div>
-    <PharmacyOtpModal
-      isOpen={isVerificationOpen}
-      email={verificationEmail}
-      onClose={handleVerificationClose}
-      onVerified={handleOtpVerified}
-    />
   </>
   );
 }

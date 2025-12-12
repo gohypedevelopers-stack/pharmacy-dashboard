@@ -90,6 +90,15 @@ const InventoryList = () => {
     () => Array.from(new Set(["All", ...items.map((item) => item.category).filter(Boolean)])),
     [items]
   );
+  const totalMedicines = useMemo(() => items.length, [items]);
+  const totalStockUnits = useMemo(
+    () =>
+      items.reduce(
+        (sum, item) => sum + (Number(item.stock ?? item.quantity ?? 0) || 0),
+        0
+      ),
+    [items]
+  );
 
   const filtered = useMemo(() => {
     return items
@@ -149,8 +158,32 @@ const InventoryList = () => {
           </header>
 
           <main className="flex-1 overflow-y-auto bg-[#f6fafb] px-10 py-7">
-          <div className="mb-6 flex flex-wrap items-center gap-3">
-            <input
+            <div className="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="rounded-2xl bg-white px-6 py-5 shadow-[0_18px_45px_rgba(15,23,42,0.04)] border border-slate-100">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  Total Medicines Added
+                </p>
+                <p className="mt-3 text-3xl font-semibold text-slate-900">
+                  {totalMedicines.toLocaleString()}
+                </p>
+                <p className="mt-2 text-sm text-slate-500">
+                  Count of distinct SKU entries
+                </p>
+              </div>
+              <div className="rounded-2xl bg-white px-6 py-5 shadow-[0_18px_45px_rgba(15,23,42,0.04)] border border-slate-100">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  Total Stock Units
+                </p>
+                <p className="mt-3 text-3xl font-semibold text-slate-900">
+                  {totalStockUnits.toLocaleString()}
+                </p>
+                <p className="mt-2 text-sm text-slate-500">
+                  Sum of current stock quantities
+                </p>
+              </div>
+            </div>
+            <div className="mb-6 flex flex-wrap items-center gap-3">
+                          <input
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               className="flex-1 min-w-[220px] rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:outline-none"
@@ -203,6 +236,7 @@ const InventoryList = () => {
                 )}
               </div>
             </div>
+
 
             {error && (
               <div className="mb-4 rounded-xl bg-red-50 px-4 py-2 text-sm font-semibold text-red-700">

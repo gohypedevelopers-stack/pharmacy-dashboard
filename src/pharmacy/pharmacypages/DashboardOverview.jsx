@@ -27,7 +27,8 @@ const friendlyStatusLabels = {
   cancelled: "Cancelled",
 };
 
-const getStatusKey = (status) => (status ? status.toString().toLowerCase() : "pending");
+const getStatusKey = (status) =>
+  status ? status.toString().toLowerCase() : "pending";
 
 const getStatusLabel = (status) => {
   if (!status) return "Pending";
@@ -41,6 +42,7 @@ const getStatusLabel = (status) => {
   );
 };
 
+// default fallback chartData (unused once live analytics is computed)
 const chartData = [
   { label: "Mon", value: 60000, type: "light" },
   { label: "Tue", value: 75000, type: "light" },
@@ -72,14 +74,24 @@ const formatCurrency = (value) => {
   }).format(value);
 };
 
-const ChartBar = ({ label, value, type }) => {
-  const heightPercent = Math.min((value / maxChartValue) * 100, 100);
+const ChartBar = ({ label, value, type, maxValue = maxChartValue }) => {
+  const safeMax = Math.max(maxValue || 0, 1);
+  const heightPercent = Math.min((value / safeMax) * 100, 100);
   const barColor = type === "dark" ? "bg-[#1D4F88]" : "bg-[#4B88D0]";
+
+  const formatINR = (amount) =>
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(typeof amount === "number" && !Number.isNaN(amount) ? amount : 0);
+
   return (
-    <div className="flex flex-col items-center h-full pt-12">
-      <div className="relative flex-1 w-20">
+    <div className="flex flex-col items-center h-full pt-12 w-full">
+      <div className="relative flex-1 w-full">
         <div
-          className={`absolute bottom-0 w-full rounded-xl ${barColor}`}
+          title={formatINR(value)}
+          className={`absolute bottom-0 left-1/2 -translate-x-1/2 rounded-xl ${barColor} w-full max-w-[56px]`}
           style={{ height: `${heightPercent}%` }}
         ></div>
       </div>
@@ -144,7 +156,8 @@ function DashboardOverview() {
         setInventoryItems(productsRes?.data?.items ?? []);
       } catch (error) {
         console.error("Unable to load pharmacy dashboard data:", error);
-        if (!isCancelled) setErrorMessage(error.message || "Failed to load dashboard data.");
+        if (!isCancelled)
+          setErrorMessage(error.message || "Failed to load dashboard data.");
       } finally {
         if (!isCancelled) setLoadingData(false);
       }
@@ -165,11 +178,11 @@ function DashboardOverview() {
       const timeLabel = order.time
         ? order.time
         : createdAt
-          ? `${createdAt.toLocaleTimeString("en-IN", {
+        ? `${createdAt.toLocaleTimeString("en-IN", {
             hour: "2-digit",
             minute: "2-digit",
           })}, ${order.metadata?.deliveryType ?? "Home Delivery"}`
-          : "—";
+        : "—";
 
       const statusLabel = getStatusLabel(order.status ?? order.STATUS);
       const statusKey = getStatusKey(order.status ?? order.STATUS);
@@ -181,7 +194,9 @@ function DashboardOverview() {
           order.customerName ??
           "Patient",
         prescriptionId:
-          order.prescriptionId ?? order.orderId ?? `ORD-${order._id?.slice(-6) ?? 0}`,
+          order.prescriptionId ??
+          order.orderId ??
+          `ORD-${order._id?.slice(-6) ?? 0}`,
         medicineCount,
         time: timeLabel,
         status: statusLabel,
@@ -198,10 +213,18 @@ function DashboardOverview() {
         name: item.name,
         sku: item.sku ?? "-",
         stock: Number.isNaN(stockValue) ? 0 : stockValue,
-        price: typeof item.price === "number" ? formatCurrency(item.price) : item.price ?? "₹0",
+        price:
+          typeof item.price === "number"
+            ? formatCurrency(item.price)
+            : item.price ?? "₹0",
         expiry: item.expiry ?? item.expiryDate ?? "-",
         category: item.category ?? "General",
-        status: stockValue <= 0 ? "Out of Stock" : stockValue <= 200 ? "Low Stock" : "In Stock",
+        status:
+          stockValue <= 0
+            ? "Out of Stock"
+            : stockValue <= 200
+            ? "Low Stock"
+            : "In Stock",
       };
     });
   }, [inventoryItems]);
@@ -209,14 +232,17 @@ function DashboardOverview() {
   const newOrdersCount = ordersForDisplay.filter(
     (order) => order.STATUS_INTERNAL === "pending" || order.STATUS_INTERNAL === "new"
   ).length;
+
   const processingOrdersCount = ordersForDisplay.filter((order) =>
     ["processing", "shipped", "ready_for_delivery", "out_for_delivery"].includes(
       order.STATUS_INTERNAL
     )
   ).length;
+
   const lowStockAlertsCount = inventoryForDisplay.filter(
     (item) => item.status === "Low Stock"
   ).length;
+
   const outOfStockAlertsCount = inventoryForDisplay.filter(
     (item) => item.status === "Out of Stock"
   ).length;
@@ -228,6 +254,7 @@ function DashboardOverview() {
       linkText: "View Orders",
       linkUrl: "/orders",
       color: "text-emerald-500",
+      badge: false,
     },
     {
       title: "Processing Orders",
@@ -235,6 +262,7 @@ function DashboardOverview() {
       linkText: "Track Status",
       linkUrl: "/orders",
       color: "text-amber-600",
+      badge: false,
     },
     {
       title: "Low Stock Alerts",
@@ -254,26 +282,181 @@ function DashboardOverview() {
     },
   ];
 
-  const totalEarningsValue = recentOrders.reduce(
-    (sum, order) => sum + (Number(order.total) || 0),
-    0
-  );
+  const totalEarningsValue = recentOrders.reduce((sum, order) => {
+    const statusKey = getStatusKey(order.status ?? order.STATUS);
+    if (statusKey !== "delivered") return sum;
+    return sum + (Number(order.total) || 0);
+  }, 0);
+
   const earningsSummary = {
     value: totalEarningsValue ? formatCurrency(totalEarningsValue) : "₹0",
     title: "Total Earnings (This Month)",
-    change: "+12.5%",
     changeColor: "text-emerald-500",
   };
 
   const statusMessage = errorMessage
     ? errorMessage
     : !sessionToken
-      ? "Login with your pharmacy account to load live data."
-      : loadingData
-        ? "Syncing with the backend…"
-        : "";
+    ? "Login with your pharmacy account to load live data."
+    : loadingData
+    ? "Syncing with the backend…"
+    : "";
 
   const recentSlice = ordersForDisplay.slice(0, 4);
+
+  // ------------------- Earnings Analytics (Year/Month/Week selectors) -------------------
+  const monthLabels = useMemo(
+    () => [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ],
+    []
+  );
+  const weekLabels = useMemo(() => ["W1", "W2", "W3", "W4", "W5"], []);
+  const dayLabels = useMemo(() => ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], []);
+
+  const getWeekOfMonth = (date) => Math.floor((date.getDate() - 1) / 7) + 1;
+
+  const now = useMemo(() => new Date(), []);
+  const [analyticsView, setAnalyticsView] = useState("weekly"); // weekly | monthly | yearly
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth()); // 0-11
+  const [selectedWeek, setSelectedWeek] = useState(getWeekOfMonth(now)); // 1-5
+
+  const deliveredOrders = useMemo(() => {
+    return (recentOrders || []).filter((order) => {
+      const statusKey = getStatusKey(order.status ?? order.STATUS);
+      return statusKey === "delivered" && order.createdAt;
+    });
+  }, [recentOrders]);
+
+  const availableYears = useMemo(() => {
+    const set = new Set();
+    deliveredOrders.forEach((o) => {
+      const d = new Date(o.createdAt);
+      if (!Number.isNaN(d.getTime())) set.add(d.getFullYear());
+    });
+    const years = Array.from(set).sort((a, b) => b - a);
+    return years.length ? years : [now.getFullYear()];
+  }, [deliveredOrders, now]);
+
+  useEffect(() => {
+    if (!availableYears.includes(selectedYear)) {
+      setSelectedYear(availableYears[0]);
+    }
+  }, [availableYears, selectedYear]);
+
+  const earningsAnalytics = useMemo(() => {
+    const sumTotal = (orders) =>
+      orders.reduce((acc, o) => acc + (Number(o.total) || 0), 0);
+
+    const toChartPoint = (label, value, maxValue) => ({
+      label,
+      value,
+      type: value === maxValue && maxValue > 0 ? "dark" : "light",
+    });
+
+    const filteredByYear = deliveredOrders.filter((o) => {
+      const d = new Date(o.createdAt);
+      return d.getFullYear() === Number(selectedYear);
+    });
+
+    let labels = [];
+    let values = [];
+    let total = 0;
+
+    if (analyticsView === "yearly") {
+      labels = monthLabels;
+      const monthSums = new Array(12).fill(0);
+      filteredByYear.forEach((o) => {
+        const d = new Date(o.createdAt);
+        monthSums[d.getMonth()] += Number(o.total) || 0;
+      });
+      values = monthSums;
+      total = sumTotal(filteredByYear);
+    }
+
+    if (analyticsView === "monthly") {
+      labels = weekLabels;
+      const monthOrders = filteredByYear.filter((o) => {
+        const d = new Date(o.createdAt);
+        return d.getMonth() === Number(selectedMonth);
+      });
+      const weekSums = new Array(5).fill(0);
+      monthOrders.forEach((o) => {
+        const d = new Date(o.createdAt);
+        const wom = Math.min(Math.max(getWeekOfMonth(d), 1), 5);
+        weekSums[wom - 1] += Number(o.total) || 0;
+      });
+      values = weekSums;
+      total = sumTotal(monthOrders);
+    }
+
+    if (analyticsView === "weekly") {
+      labels = dayLabels;
+      const monthOrders = filteredByYear.filter((o) => {
+        const d = new Date(o.createdAt);
+        return d.getMonth() === Number(selectedMonth);
+      });
+      const weekOrders = monthOrders.filter((o) => {
+        const d = new Date(o.createdAt);
+        return getWeekOfMonth(d) === Number(selectedWeek);
+      });
+
+      // JS getDay(): 0 Sun ... 6 Sat. We want Mon..Sun
+      const daySums = new Array(7).fill(0);
+      weekOrders.forEach((o) => {
+        const d = new Date(o.createdAt);
+        const jsDay = d.getDay();
+        const idx = jsDay === 0 ? 6 : jsDay - 1; // Mon=0 ... Sun=6
+        daySums[idx] += Number(o.total) || 0;
+      });
+
+      values = daySums;
+      total = sumTotal(weekOrders);
+    }
+
+    const maxValue = Math.max(...values, 0);
+    const axisMax = maxValue > 0 ? Math.ceil(maxValue / 10000) * 10000 : 100000;
+
+    const axisLabels = [
+      axisMax,
+      Math.round(axisMax * 0.8),
+      Math.round(axisMax * 0.6),
+      Math.round(axisMax * 0.4),
+      Math.round(axisMax * 0.2),
+      0,
+    ].map((v) => (v >= 1000 ? `${Math.round(v / 1000)}K` : `${v}`));
+
+    const chartPoints = labels.map((label) => label);
+    const maxForDark = maxValue;
+
+    const data = chartPoints.map((label, idx) =>
+      toChartPoint(label, values[idx] || 0, maxForDark)
+    );
+
+    return { data, total, axisMax, axisLabels };
+  }, [
+    analyticsView,
+    deliveredOrders,
+    selectedYear,
+    selectedMonth,
+    selectedWeek,
+    monthLabels,
+    weekLabels,
+    dayLabels,
+  ]);
+  // -------------------------------------------------------------------------------------
 
   return (
     <div className="min-h-screen bg-[#f6fafb] text-slate-900">
@@ -316,7 +499,7 @@ function DashboardOverview() {
                 </p>
                 <div className="flex items-center mt-3 text-[13px] font-medium">
                   <span className={earningsSummary.changeColor}>
-                    ↑{earningsSummary.change}
+                    {earningsSummary.change}
                   </span>
                 </div>
               </div>
@@ -361,9 +544,10 @@ function DashboardOverview() {
                           </td>
                           <td className="px-6 py-3">
                             <span
-                              className={`inline-flex rounded-xl px-3 py-1 text-[11px] font-semibold ${statusStyles[order.status] ||
+                              className={`inline-flex rounded-xl px-3 py-1 text-[11px] font-semibold ${
+                                statusStyles[order.status] ||
                                 "bg-[#E3E8EF] text-[#475569]"
-                                }`}
+                              }`}
                             >
                               {order.status}
                             </span>
@@ -388,7 +572,10 @@ function DashboardOverview() {
                       ))}
                       {!recentSlice.length && (
                         <tr>
-                          <td className="px-6 py-6 text-center text-sm text-slate-500" colSpan="6">
+                          <td
+                            className="px-6 py-6 text-center text-sm text-slate-500"
+                            colSpan="6"
+                          >
                             No orders yet.
                           </td>
                         </tr>
@@ -430,26 +617,72 @@ function DashboardOverview() {
                   <h2 className="text-[16px] font-semibold text-slate-900">
                     Earnings Analytics
                   </h2>
-                  <div className="flex text-[12px] font-medium text-slate-500 space-x-3">
-                    <button className="text-emerald-600 font-semibold border-b-2 border-emerald-500">
-                      Weekly
-                    </button>
-                    <button className="hover:text-slate-700">Monthly</button>
-                    <button className="hover:text-slate-700">Yearly</button>
+
+                  <div className="flex items-center gap-2 text-[12px] font-medium text-slate-500">
+                    <select
+                      value={analyticsView}
+                      onChange={(e) => setAnalyticsView(e.target.value)}
+                      className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-slate-700"
+                    >
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                      <option value="yearly">Yearly</option>
+                    </select>
+
+                    <select
+                      value={selectedYear}
+                      onChange={(e) => setSelectedYear(Number(e.target.value))}
+                      className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-slate-700"
+                    >
+                      {availableYears.map((y) => (
+                        <option key={y} value={y}>
+                          {y}
+                        </option>
+                      ))}
+                    </select>
+
+                    {analyticsView !== "yearly" && (
+                      <select
+                        value={selectedMonth}
+                        onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                        className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-slate-700"
+                      >
+                        {monthLabels.map((m, idx) => (
+                          <option key={m} value={idx}>
+                            {m}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+
+                    {analyticsView === "weekly" && (
+                      <select
+                        value={selectedWeek}
+                        onChange={(e) => setSelectedWeek(Number(e.target.value))}
+                        className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-slate-700"
+                      >
+                        {[1, 2, 3, 4, 5].map((w) => (
+                          <option key={w} value={w}>
+                            Week {w}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                 </header>
+
                 <div className="relative h-101 flex items-end">
                   <div className="absolute left-0 bottom-0 top-0 flex flex-col justify-between h-full py-2 pr-3 text-[11px] text-slate-400">
-                    <span>100K</span>
-                    <span>80K</span>
-                    <span>60K</span>
-                    <span>40K</span>
-                    <span>20K</span>
-                    <span>0</span>
+                    {earningsAnalytics.axisLabels.map((label) => (
+                      <span key={label}>{label}</span>
+                    ))}
                   </div>
-                  <div className="flex flex-1 justify-around pl-8 h-full border-l border-b border-slate-100">
-                    {chartData.map((data) => (
-                      <ChartBar key={data.label} {...data} />
+
+                  <div className="flex flex-1 pl-8 h-full border-l border-b border-slate-100">
+                    {earningsAnalytics.data.map((data) => (
+                      <div key={data.label} className="flex-1 flex justify-center">
+                        <ChartBar {...data} maxValue={earningsAnalytics.axisMax} />
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -492,8 +725,6 @@ function DashboardOverview() {
                   </p>
                 </div>
               </div>
-
-              
             </div>
           </main>
         </div>

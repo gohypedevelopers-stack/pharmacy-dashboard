@@ -1,5 +1,5 @@
 // src/pharmacy/pharmacypages/EarningsOverview.jsx
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Sidebar from "../../pharmacy/components/Sidebar.jsx";
 import { apiRequest } from "../../lib/api.js";
 import { getPharmacyToken } from "../../lib/pharmacySession.js";
@@ -15,6 +15,31 @@ import {
 
 import bellicon from "../../pharmacy/assets/bellicon.png";
 import pharmacyProfile from "../../pharmacy/assets/pharmacyprofile.png";
+
+const normalizeStatus = (status) =>
+  (status ?? "").toString().toLowerCase().replace(/[_\s]/g, "");
+
+const parseOrderDate = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const sumOrdersForMonthOffset = (orders, offset) => {
+  const reference = new Date();
+  reference.setMonth(reference.getMonth() + offset);
+  const targetMonth = reference.getMonth();
+  const targetYear = reference.getFullYear();
+
+  return orders.reduce((sum, order) => {
+    const createdAt = parseOrderDate(order.createdAt);
+    if (!createdAt) return sum;
+    if (createdAt.getMonth() === targetMonth && createdAt.getFullYear() === targetYear) {
+      return sum + (Number(order.total) || 0);
+    }
+    return sum;
+  }, 0);
+};
 
 function EarningsOverview() {
   const [loading, setLoading] = useState(true);
@@ -63,6 +88,70 @@ function EarningsOverview() {
       maximumFractionDigits: 0,
     }).format(amount || 0);
   };
+
+  const deliveredOrders = useMemo(
+    () =>
+      earningsData.recentOrders.filter(
+        (order) => normalizeStatus(order.status ?? order.STATUS) === "delivered"
+      ),
+    [earningsData.recentOrders]
+  );
+
+  const totalRevenueValue = useMemo(
+    () =>
+      deliveredOrders.reduce(
+        (sum, order) => sum + (Number(order.total) || 0),
+        0
+      ),
+    [deliveredOrders]
+  );
+
+  const currentMonthRevenue = useMemo(
+    () => sumOrdersForMonthOffset(deliveredOrders, 0),
+    [deliveredOrders]
+  );
+
+  const lastMonthRevenue = useMemo(
+    () => sumOrdersForMonthOffset(deliveredOrders, -1),
+    [deliveredOrders]
+  );
+
+  const realtimeDailyRevenue = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const timeline = Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(today);
+      date.setDate(date.getDate() - (6 - index));
+      const key = date.toISOString().split("T")[0];
+      return { key, date, revenue: 0, orders: 0 };
+    });
+
+    const dayMap = timeline.reduce((map, entry) => {
+      map[entry.key] = entry;
+      return map;
+    }, {});
+
+    deliveredOrders.forEach((order) => {
+      const createdAt = parseOrderDate(order.createdAt);
+      if (!createdAt) return;
+      createdAt.setHours(0, 0, 0, 0);
+      const key = createdAt.toISOString().split("T")[0];
+      const dayEntry = dayMap[key];
+      if (!dayEntry) return;
+      dayEntry.revenue += Number(order.total) || 0;
+      dayEntry.orders += 1;
+    });
+
+    return timeline.map((entry) => ({
+      day: entry.date.toLocaleDateString("en-IN", { weekday: "short" }),
+      revenue: entry.revenue,
+      orders: entry.orders,
+    }));
+  }, [deliveredOrders]);
+
+  const hasRevenueHistory = realtimeDailyRevenue.some(
+    (entry) => entry.revenue > 0 || entry.orders > 0
+  );
 
   const formatGrowth = (value) => {
     if (value > 0) return `+${value.toFixed(1)}%`;
@@ -151,7 +240,7 @@ function EarningsOverview() {
                       Total Revenue
                     </div>
                     <div className="mt-3 text-3xl font-semibold text-slate-900">
-                      {formatCurrency(earningsData.totalRevenue)}
+                      {formatCurrency(totalRevenueValue)}
                     </div>
                     <div
                       className={`mt-2 text-[12px] font-semibold ${earningsData.revenueGrowth >= 0
@@ -195,10 +284,10 @@ function EarningsOverview() {
                       This Month Revenue
                     </div>
                     <div className="mt-3 text-3xl font-semibold text-slate-900">
-                      {formatCurrency(earningsData.currentMonthRevenue)}
+                      {formatCurrency(currentMonthRevenue)}
                     </div>
                     <div className="mt-2 text-[12px] text-slate-400">
-                      Last month: {formatCurrency(earningsData.lastMonthRevenue)}
+                      Last month: {formatCurrency(lastMonthRevenue)}
                     </div>
                   </div>
                 </section>
@@ -212,11 +301,10 @@ function EarningsOverview() {
                   </div>
 
                   <div className="h-72">
-                    {earningsData.dailyRevenue &&
-                      earningsData.dailyRevenue.length > 0 ? (
+                    {hasRevenueHistory ? (
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart
-                          data={earningsData.dailyRevenue}
+                          data={realtimeDailyRevenue}
                           margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                         >
                           <defs>
